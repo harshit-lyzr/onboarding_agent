@@ -16,7 +16,6 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application files
-COPY app.py database.py lyzr_agent.py send_email.py ./
-
+COPY ..
 # Set the default command to run the script
 CMD ["python", "app.py"]
