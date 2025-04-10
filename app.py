@@ -16,45 +16,53 @@ email_schedule = [
     (90, "day_90_sent", "67f78fb9ddf6166b7697666f"),
 ]
 
-for emp in employees.find({"status": "active"}):
-    print(emp)
+def main():
+    try:
+        for emp in employees.find({"status": "active"}):
+            print(emp)
 
-    joining_date = emp.get("joining_date")
-    if not joining_date:
-        continue
+            joining_date = emp.get("joining_date")
+            if not joining_date:
+                continue
 
-    days_since_joining = (today - joining_date.date()).days
-    print(days_since_joining)
+            days_since_joining = (today - joining_date.date()).days
+            print(days_since_joining)
 
-    survey = surveys.find_one({"user_id": emp["user_id"]})
-    survey_links = survey_link.find_one({"user_id": emp["user_id"]})
-    if not survey:
-        continue
-    company = company.find_one({"user_id": emp["user_id"]})
+            survey = surveys.find_one({"user_id": emp["user_id"]})
+            survey_links = survey_link.find_one({"user_id": emp["user_id"]})
+            if not survey:
+                continue
+            company = company.find_one({"user_id": emp["user_id"]})
 
-    update_fields = {}
+            update_fields = {}
 
-    for target_day, flag, agent_id in email_schedule:
-        if days_since_joining == target_day and not survey.get(flag):
-            data = smtp.find_one({"user_id": emp["user_id"]})
-            if flag == "day_0_sent":
-                success = email_generation(agent_id,
-                                           "Employee details: \nEmployee name: "+emp['firstname']+" "+emp['lastname'] +"Joining Date"+str(emp['joining_date'])+"Company Name: "+company['company'])
-                send_email(success['subject'], success['content'], company, data)
-            elif flag in ["day_1_sent", "day_7_sent", "day_30_sent", "day_90_sent"]:
-                success = email_generation(agent_id,
-                                           "Form Link: "+survey_links[flag])
-                send_email(success['subject'], success['content'], emp, data)
-            else:
-                success = email_generation(agent_id, "Company Name: "+company['company']+"Employee Name: "+emp['firstname'])
-                send_email(success['subject'], success['content'], emp, data)
+            for target_day, flag, agent_id in email_schedule:
+                if days_since_joining == target_day and not survey.get(flag):
+                    data = smtp.find_one({"user_id": emp["user_id"]})
+                    if flag == "day_0_sent":
+                        success = email_generation(agent_id,
+                                                   "Employee details: \nEmployee name: "+emp['firstname']+" "+emp['lastname'] +"Joining Date"+str(emp['joining_date'])+"Company Name: "+company['company'])
+                        send_email(success['subject'], success['content'], company, data)
+                    elif flag in ["day_1_sent", "day_7_sent", "day_30_sent", "day_90_sent"]:
+                        success = email_generation(agent_id,
+                                                   "Form Link: "+survey_links[flag])
+                        send_email(success['subject'], success['content'], emp, data)
+                    else:
+                        success = email_generation(agent_id, "Company Name: "+company['company']+"Employee Name: "+emp['firstname'])
+                        send_email(success['subject'], success['content'], emp, data)
 
 
 
-            update_fields[flag] = True
-            update_fields["last_sent_at"] = datetime.utcnow()
-            employees.update_one({"user_id": emp["user_id"]},{"$set": {"stage": flag}})
-            break
+                    update_fields[flag] = True
+                    update_fields["last_sent_at"] = datetime.utcnow()
+                    employees.update_one({"user_id": emp["user_id"]},{"$set": {"stage": flag}})
+                    break
 
-    if update_fields:
-        surveys.update_one({"user_id": emp["user_id"]}, {"$set": update_fields})
+            if update_fields:
+                surveys.update_one({"user_id": emp["user_id"]}, {"$set": update_fields})
+
+    except Exception as e:
+        print(f"Error occurred: {e}")
+
+if __name__ == "__main__":
+    main()
