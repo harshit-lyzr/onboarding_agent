@@ -1,7 +1,17 @@
+import os
+import signal
+import sys
 from datetime import datetime
 from database import employees, smtp, surveys, company, survey_link
 from send_email import send_email
 from lyzr_agent import email_generation
+
+# Graceful shutdown handler
+def handle_sigterm(signum, frame):
+    print("Received SIGTERM. Performing cleanup...")
+    sys.exit(0)
+
+signal.signal(signal.SIGTERM, handle_sigterm)
 
 today = datetime.utcnow().date()
 
@@ -18,21 +28,23 @@ email_schedule = [
 
 def main():
     try:
+        print("Starting onboarding email task...")
+        
         for emp in employees.find({"status": "active"}):
-            print(emp)
+            print(f"Processing employee: {emp.get('firstname', 'Unknown')} {emp.get('lastname', 'Unknown')}")
 
             joining_date = emp.get("joining_date")
             if not joining_date:
                 continue
 
             days_since_joining = (today - joining_date.date()).days
-            print(days_since_joining)
+            print(f"Days since joining: {days_since_joining}")
 
             survey = surveys.find_one({"user_id": emp["user_id"]})
             survey_links = survey_link.find_one({"user_id": emp["user_id"]})
             if not survey:
                 continue
-            company = company.find_one({"user_id": emp["user_id"]})
+            company_info = company.find_one({"user_id": emp["user_id"]})
 
             update_fields = {}
 
@@ -41,28 +53,30 @@ def main():
                     data = smtp.find_one({"user_id": emp["user_id"]})
                     if flag == "day_0_sent":
                         success = email_generation(agent_id,
-                                                   "Employee details: \nEmployee name: "+emp['firstname']+" "+emp['lastname'] +"Joining Date"+str(emp['joining_date'])+"Company Name: "+company['company'])
-                        send_email(success['subject'], success['content'], company, data)
+                                               f"Employee details: \nEmployee name: {emp['firstname']} {emp['lastname']} Joining Date: {emp['joining_date']} Company Name: {company_info['company']}")
+                        send_email(success['subject'], success['content'], company_info, data)
                     elif flag in ["day_1_sent", "day_7_sent", "day_30_sent", "day_90_sent"]:
                         success = email_generation(agent_id,
-                                                   "Form Link: "+survey_links[flag])
+                                               f"Form Link: {survey_links[flag]}")
                         send_email(success['subject'], success['content'], emp, data)
                     else:
-                        success = email_generation(agent_id, "Company Name: "+company['company']+"Employee Name: "+emp['firstname'])
+                        success = email_generation(agent_id, f"Company Name: {company_info['company']} Employee Name: {emp['firstname']}")
                         send_email(success['subject'], success['content'], emp, data)
-
-
 
                     update_fields[flag] = True
                     update_fields["last_sent_at"] = datetime.utcnow()
-                    employees.update_one({"user_id": emp["user_id"]},{"$set": {"stage": flag}})
+                    employees.update_one({"user_id": emp["user_id"]}, {"$set": {"stage": flag}})
+                    print(f"Sent email for {flag}")
                     break
 
             if update_fields:
                 surveys.update_one({"user_id": emp["user_id"]}, {"$set": update_fields})
 
+        print("Task completed successfully")
+
     except Exception as e:
         print(f"Error occurred: {e}")
+        sys.exit(1)
 
 if __name__ == "__main__":
     main()
