@@ -1,9 +1,11 @@
 import requests
-from dotenv import load_dotenv
 import os
 import json
+from dotenv import load_dotenv
+
 
 load_dotenv()
+
 
 API_KEY = os.getenv("LYZR_KEY")
 API_URL = os.getenv("API_URL")

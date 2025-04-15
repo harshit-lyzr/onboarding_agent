@@ -1,8 +1,8 @@
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from database import db
 from datetime import datetime
+from database import communication_logs
 
 
 def send_email(subject, body, to_email, smtp_data):
@@ -23,7 +23,7 @@ def send_email(subject, body, to_email, smtp_data):
         server.quit()
 
         print("Email sent successfully!")
-        db.logs.insert_one({
+        communication_logs.insert_one({
             "user_id":to_email['user_id'],
             "survey_type": "complete",  # crude extraction for log
             "status": "sent",
