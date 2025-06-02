@@ -1,4 +1,5 @@
 from database import client,db, employee, preboarding_employee, surveys, pre_surveys
+from datetime import datetime
 
 
 def add_employee(data: dict,collection:str, user_id:str):
@@ -32,7 +33,8 @@ def add_employee(data: dict,collection:str, user_id:str):
           "email": emp.get("email"),
           "mobilePhone": emp.get("mobilePhone"),
           "reporting_manager_email":emp['reportsTo'].get("email"),
-                        "status": "active"
+            "status": "active",
+                        "created_at":datetime.utcnow()
       }
                     employee.insert_one(filtered_info)
                     surveys.insert_one({
@@ -41,7 +43,8 @@ def add_employee(data: dict,collection:str, user_id:str):
   "day_7_sent": False,
   "day_30_sent": False,
   "day_90_sent": False,
-  "employee_id": emp.get("id")
+  "employee_id": emp.get("id"),
+"created_at": datetime.utcnow()
 })
                     new_employee_count += 1
                     print(f"Inserted new employee with ID: {employee_id}")
@@ -95,14 +98,16 @@ def add_pre_employee(data: dict,collection:str, user_id: str):
         "joiningDate": emp.get("expectedDateOfJoining"),
         "email": emp.get("email"),
         "mobilePhone": emp.get("mobileNumber"),
-                        "status":"active"
+                        "status":"active",
+                        "created_at": datetime.utcnow()
     }
                     preboarding_employee.insert_one(filtered_info)
                     pre_surveys.insert_one({  "day_07_sent": False,
                   "day_015_sent": False,
                   "day_0_sent": False,
                   "employee_id":emp.get("id"),
-                                              "user_id":user_id})
+                                              "user_id":user_id,
+                                              "created_at":datetime.utcnow()})
                     new_employee_count += 1
                     print(f"Inserted new employee with ID: {employee_id}")
                 except Exception as e:

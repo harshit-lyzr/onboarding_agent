@@ -45,7 +45,7 @@ def get_keka_employees(bearer_token: str) -> dict:
 
 
 def get_keka_preboarding_candidates(bearer_token: str) -> dict:
-    url = "https://lyzr.keka.com/api/v1/hire/preboarding/candidates"
+    url = "https://lyzr.keka.com/api/v1/hire/preboarding/candidates?stage=4&status=0"
     headers = {
         "accept": "application/json",
         "authorization": f"Bearer {bearer_token}"
