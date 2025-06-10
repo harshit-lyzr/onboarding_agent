@@ -39,10 +39,18 @@ def add_employee(data: dict,collection:str, user_id:str):
                     employee.insert_one(filtered_info)
                     surveys.insert_one({
   "user_id": user_id,
-  "day_1_sent": False,
-  "day_7_sent": False,
-  "day_30_sent": False,
-  "day_90_sent": False,
+  "day_1_sent": {
+                        "sent": False
+                    },
+  "day_7_sent": {
+                        "sent": False
+                    },
+  "day_30_sent": {
+                        "sent": False
+                    },
+  "day_90_sent": {
+                        "sent": False
+                    },
   "employee_id": emp.get("id"),
 "created_at": datetime.utcnow()
 })
@@ -102,9 +110,15 @@ def add_pre_employee(data: dict,collection:str, user_id: str):
                         "created_at": datetime.utcnow()
     }
                     preboarding_employee.insert_one(filtered_info)
-                    pre_surveys.insert_one({  "day_07_sent": False,
-                  "day_015_sent": False,
-                  "day_0_sent": False,
+                    pre_surveys.insert_one({  "day_07_sent": {
+                        "sent": False
+                    },
+                  "day_015_sent": {
+                        "sent": False
+                    },
+                  "day_0_sent": {
+                        "sent": False
+                    },
                   "employee_id":emp.get("id"),
                                               "user_id":user_id,
                                               "created_at":datetime.utcnow()})

@@ -14,6 +14,7 @@ from database import (
 )
 from lyzr_agent import email_generation
 from smtp_setup import send_email
+from gmail import send_email_with_refresh_token
 
 # Define email schedule as a constant
 EMAIL_SCHEDULE = [
@@ -72,6 +73,7 @@ def process_employee(emp_type, emp, survey_collection):
 
     days_since_joining = (TODAY - joining_date.date()).days
 
+
     #  Determine whether to search pre_surveys or surveys.
     if emp_type == "employee":
         survey = surveys.find_one(
@@ -103,7 +105,7 @@ def process_employee(emp_type, emp, survey_collection):
         return  # Skip further processing since we've handled day 0
 
     for target_day, flag, agent_id in EMAIL_SCHEDULE:
-        if days_since_joining == target_day and not survey.get(flag):
+        if days_since_joining == target_day and not survey.get(flag)['sent']:
             data = smtpdetails.find_one({"user_id": emp["user_id"]})
 
             if not data:
@@ -127,8 +129,14 @@ def process_employee(emp_type, emp, survey_collection):
                 logging.warning(f"Invalid flag or employee type. Skipping email: {flag}, {emp_type}")
                 continue
 
-            send_email(success['subject'], success['content'], emp, data)
-            update_fields[flag] = True
+            # send_email(success['subject'], success['content'], emp, data)
+            send_email_with_refresh_token(emp['email'], success['subject'], success['content'], data['refresh_token'])
+            update_fields[flag] = {
+                        "sent": True,
+                        "sent_at": datetime.utcnow(),
+                        "subject": success.get('subject', 'N/A'),
+                        "content": success.get('content', 'N/A')
+                    }
             update_fields["last_sent_at"] = datetime.utcnow()
 
             # Determine which collection to update based on the emp_type
